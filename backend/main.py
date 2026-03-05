@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import http.client
@@ -44,7 +44,6 @@ async def lookup_skus(request: SKURequest):
             continue
         try:
             data = fetch_product(sku)
-            # Extract relevant fields
             traits = {t["name"]: t["value"] for t in data.get("traits", [])}
             results.append({
                 "sku": data.get("sku", sku),
