@@ -1,545 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>StockX Release Date Lookup</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --bg: #0a0a0a;
-    --surface: #111111;
-    --border: #1f1f1f;
-    --accent: #e8ff47;
-    --accent2: #ff5c3a;
-    --text: #f0f0f0;
-    --muted: #555;
-    --mono: 'DM Mono', monospace;
-    --display: 'Syne', sans-serif;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SKU Lookup — StockX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #222;
+      --accent: #c8f135;
+      --accent2: #ff4d4d;
+      --text: #f0f0f0;
+      --muted: #666;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --display: 'Bebas Neue', sans-serif;
+    }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 60px 20px;
-  }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-  /* — grain overlay — */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
-  }
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.4;
+    }
 
-  .wrapper {
-    width: 100%;
-    max-width: 780px;
-    position: relative;
-    z-index: 1;
-  }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 24px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-  /* — header — */
-  header {
-    margin-bottom: 48px;
-  }
+    .logo {
+      font-family: var(--display);
+      font-size: 2rem;
+      letter-spacing: 3px;
+      color: var(--accent);
+    }
 
-  .eyebrow {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 10px;
-  }
+    .logo span { color: var(--text); }
 
-  h1 {
-    font-family: var(--display);
-    font-size: clamp(32px, 6vw, 56px);
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.02em;
-    color: var(--text);
-  }
+    .header-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+    }
 
-  h1 span {
-    color: var(--accent);
-  }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 32px;
+    }
 
-  .subtitle {
-    margin-top: 12px;
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.6;
-  }
+    .hero {
+      margin-bottom: 48px;
+    }
 
-  /* — input panel — */
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 20px;
-  }
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(3rem, 8vw, 6rem);
+      line-height: 0.9;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
 
-  .panel-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+      -webkit-text-stroke: 0px;
+    }
 
-  .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-  }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 300;
+      max-width: 440px;
+      line-height: 1.7;
+    }
 
-  textarea {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 1.8;
-    padding: 20px;
-    resize: vertical;
-    min-height: 160px;
-    caret-color: var(--accent);
-  }
+    .input-section {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 48px;
+    }
 
-  textarea::placeholder { color: var(--muted); }
+    .textarea-wrap {
+      position: relative;
+    }
 
-  /* — API URL input — */
-  .api-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    align-items: stretch;
-  }
+    .textarea-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: block;
+    }
 
-  .api-label {
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    padding: 0 4px;
-  }
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 16px;
+      resize: vertical;
+      min-height: 140px;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.8;
+    }
 
-  .api-input {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 12px;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
+    textarea:focus { border-color: var(--accent); }
 
-  .api-input:focus { border-color: var(--accent); }
-  .api-input::placeholder { color: var(--muted); }
+    textarea::placeholder { color: var(--muted); }
 
-  /* — button — */
-  .btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--accent);
-    color: #0a0a0a;
-    border: none;
-    border-radius: 4px;
-    font-family: var(--display);
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 14px 28px;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
-    width: 100%;
-    justify-content: center;
-  }
+    .btn {
+      font-family: var(--display);
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 14px 32px;
+      cursor: pointer;
+      transition: all 0.15s;
+      align-self: end;
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+    }
 
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,255,71,0.25); }
-  .btn:active { transform: translateY(0); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn:hover { background: #d9ff4a; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  .btn-icon { font-size: 16px; }
+    .btn .spinner {
+      display: none;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #000;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
 
-  /* — progress bar — */
-  .progress-wrap {
-    display: none;
-    margin-top: 24px;
-    margin-bottom: 4px;
-  }
+    .btn.loading .spinner { display: inline-block; }
 
-  .progress-wrap.visible { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-  .progress-bar-track {
-    height: 2px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
+    /* Stats bar */
+    .stats-bar {
+      display: none;
+      gap: 32px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
 
-  .progress-bar-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    transition: width 0.3s ease;
-    box-shadow: 0 0 10px var(--accent);
-  }
+    .stats-bar.visible { display: flex; }
 
-  .progress-text {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-  }
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
-  /* — table — */
-  .table-wrap {
-    display: none;
-    margin-top: 40px;
-    animation: fadeUp 0.4s ease;
-  }
+    .stat-num {
+      font-family: var(--display);
+      font-size: 2rem;
+      color: var(--accent);
+      line-height: 1;
+    }
 
-  .table-wrap.visible { display: block; }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+    /* Table */
+    .table-wrap {
+      overflow-x: auto;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: all 0.4s ease;
+    }
 
-  .table-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-  }
+    .table-wrap.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
-  .table-title {
-    font-family: var(--display);
-    font-size: 18px;
-    font-weight: 700;
-  }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
 
-  .badge {
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 2px;
-    background: rgba(232,255,71,0.1);
-    color: var(--accent);
-    border: 1px solid rgba(232,255,71,0.2);
-  }
+    thead tr {
+      border-bottom: 2px solid var(--accent);
+    }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+    th {
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 500;
+    }
 
-  thead {
-    border-bottom: 2px solid var(--accent);
-  }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      animation: rowIn 0.3s ease both;
+    }
 
-  th {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--accent);
-    padding: 10px 16px;
-    text-align: left;
-  }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
 
-  td {
-    padding: 13px 16px;
-    font-size: 13px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
 
-  tr:last-child td { border-bottom: none; }
+    td {
+      padding: 14px 16px;
+      vertical-align: middle;
+    }
 
-  tbody tr {
-    transition: background 0.15s;
-  }
+    .td-image img {
+      width: 56px;
+      height: 40px;
+      object-fit: contain;
+      background: #fff;
+      padding: 2px;
+    }
 
-  tbody tr:hover {
-    background: rgba(255,255,255,0.03);
-  }
+    .td-name {
+      font-weight: 500;
+      max-width: 280px;
+    }
 
-  .sku-cell {
-    font-family: var(--mono);
-    font-weight: 500;
-    color: var(--text);
-  }
+    .td-name small {
+      display: block;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
 
-  .date-cell {
-    color: var(--accent);
-    font-weight: 500;
-  }
+    .td-sku {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+    }
 
-  .date-cell.error {
-    color: var(--accent2);
-    font-size: 11px;
-    letter-spacing: 0.04em;
-  }
+    .td-date {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
 
-  /* spinner */
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+    .td-price {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+    }
 
-  .spinner {
-    display: inline-block;
-    width: 12px; height: 12px;
-    border: 2px solid rgba(255,255,255,0.15);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: middle;
-    margin-right: 6px;
-  }
+    .badge-error {
+      font-family: var(--mono);
+      font-size: 10px;
+      background: rgba(255,77,77,0.15);
+      color: var(--accent2);
+      border: 1px solid var(--accent2);
+      padding: 3px 8px;
+      letter-spacing: 1px;
+    }
 
-  /* — export — */
-  .export-row {
-    margin-top: 16px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
+    .empty-state {
+      text-align: center;
+      padding: 80px 0;
+      color: var(--muted);
+    }
 
-  .btn-sm {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    border-radius: 4px;
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 7px 14px;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
+    .empty-state .big {
+      font-family: var(--display);
+      font-size: 5rem;
+      color: var(--border);
+      display: block;
+      margin-bottom: 16px;
+    }
 
-  .btn-sm:hover { border-color: var(--text); color: var(--text); }
-
-  /* divider */
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 40px 0;
-  }
-</style>
+    @media (max-width: 640px) {
+      header { padding: 16px 20px; }
+      main { padding: 40px 20px; }
+      .input-section { grid-template-columns: 1fr; }
+      .btn { width: 100%; text-align: center; }
+    }
+  </style>
 </head>
 <body>
-<div class="wrapper">
 
-  <header>
-    <div class="eyebrow">↗ StockX Tool</div>
-    <h1>Release<br/><span>Date Lookup</span></h1>
-    <p class="subtitle">Paste SKU slugs one per line — the tool will query your API<br/>and return a clean release date table.</p>
-  </header>
+<header>
+  <div class="logo">SKU<span>SCAN</span></div>
+  <div class="header-tag">StockX Lookup</div>
+</header>
 
-  <!-- API base URL -->
-  <div class="api-row">
-    <span class="api-label">API&nbsp;URL</span>
-    <input class="api-input" id="apiUrl"
-           type="text"
-           placeholder="https://your-app.vercel.app"
-           value="https://your-app.vercel.app"/>
+<main>
+  <div class="hero">
+    <h1>LOOK UP<br><em>ANY SKU</em><br>INSTANTLY</h1>
+    <p>Paste your SKU list below — one per line — and get name, release date, pricing and more from StockX in seconds.</p>
   </div>
 
-  <!-- SKU textarea -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="dot"></div>
-      SKU list — one per line
+  <div class="input-section">
+    <div class="textarea-wrap">
+      <span class="textarea-label">// Enter SKUs — one per line</span>
+      <textarea id="skuInput" placeholder="DV1031-030&#10;FD2596-100&#10;DZ5485-612"></textarea>
     </div>
-    <textarea id="skuInput" placeholder="nike-air-max-1-anniversary-red&#10;adidas-yeezy-boost-350-v2-zebra&#10;jordan-1-retro-high-og-chicago-2015"></textarea>
+    <button class="btn" id="lookupBtn" onclick="lookupSKUs()">
+      <span class="spinner"></span>
+      LOOK UP
+    </button>
   </div>
 
-  <button class="btn" id="fetchBtn" onclick="fetchAll()">
-    <span class="btn-icon">⚡</span> Fetch Release Dates
-  </button>
-
-  <!-- progress -->
-  <div class="progress-wrap" id="progressWrap">
-    <div class="progress-bar-track">
-      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
-    </div>
-    <div class="progress-text" id="progressText">Initializing…</div>
+  <div class="stats-bar" id="statsBar">
+    <div class="stat"><span class="stat-num" id="statTotal">0</span><span class="stat-label">Total SKUs</span></div>
+    <div class="stat"><span class="stat-num" id="statSuccess">0</span><span class="stat-label">Found</span></div>
+    <div class="stat"><span class="stat-num" id="statError">0</span><span class="stat-label">Errors</span></div>
   </div>
 
-  <!-- table -->
   <div class="table-wrap" id="tableWrap">
-    <div class="table-meta">
-      <span class="table-title">Results</span>
-      <span class="badge" id="countBadge">0 items</span>
+    <div class="empty-state" id="emptyState">
+      <span class="big">—</span>
+      Results will appear here
     </div>
-    <table id="resultsTable">
+    <table id="resultsTable" style="display:none">
       <thead>
         <tr>
+          <th></th>
+          <th>Name</th>
           <th>SKU</th>
           <th>Release Date</th>
+          <th>Retail</th>
+          <th>Last Sale</th>
         </tr>
       </thead>
       <tbody id="resultsBody"></tbody>
     </table>
-
-    <div class="export-row">
-      <button class="btn-sm" onclick="exportCSV()">Export CSV</button>
-      <button class="btn-sm" onclick="copyTable()">Copy Table</button>
-    </div>
   </div>
-
-</div>
+</main>
 
 <script>
-  const results = [];
+  // Change this to your deployed FastAPI URL
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000'
+    : 'https://YOUR-BACKEND.vercel.app'; // ← update after deploying
 
-  async function fetchAll() {
-    const raw = document.getElementById('skuInput').value.trim();
-    const apiBase = document.getElementById('apiUrl').value.trim().replace(/\/$/, '');
-    const skus = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  async function lookupSKUs() {
+    const input = document.getElementById('skuInput').value.trim();
+    if (!input) return;
 
-    if (!skus.length) { alert('Please enter at least one SKU.'); return; }
-    if (!apiBase) { alert('Please enter your API base URL.'); return; }
+    const skus = input.split('\n').map(s => s.trim()).filter(Boolean);
+    if (!skus.length) return;
 
-    const btn = document.getElementById('fetchBtn');
+    const btn = document.getElementById('lookupBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Fetching…';
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> LOADING...';
 
-    results.length = 0;
+    try {
+      const res = await fetch(`${API_BASE}/lookup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skus }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { results } = await res.json();
+      renderResults(results);
+    } catch (err) {
+      alert('Error connecting to backend: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+      btn.innerHTML = '<span class="spinner"></span> LOOK UP';
+    }
+  }
+
+  function renderResults(results) {
+    const successCount = results.filter(r => r.status === 'success').length;
+    const errorCount = results.filter(r => r.status === 'error').length;
+
+    document.getElementById('statTotal').textContent = results.length;
+    document.getElementById('statSuccess').textContent = successCount;
+    document.getElementById('statError').textContent = errorCount;
+    document.getElementById('statsBar').classList.add('visible');
 
     const tbody = document.getElementById('resultsBody');
     tbody.innerHTML = '';
-    document.getElementById('tableWrap').classList.remove('visible');
 
-    const progressWrap = document.getElementById('progressWrap');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    progressWrap.classList.add('visible');
-
-    // Show table immediately for live updates
-    document.getElementById('tableWrap').classList.add('visible');
-    document.getElementById('countBadge').textContent = `0 / ${skus.length}`;
-
-    for (let i = 0; i < skus.length; i++) {
-      const sku = skus[i];
-      const pct = Math.round(((i) / skus.length) * 100);
-      progressFill.style.width = pct + '%';
-      progressText.textContent = `Processing ${i + 1} of ${skus.length} — ${sku}`;
-
-      // Placeholder row
+    results.forEach((r, i) => {
       const tr = document.createElement('tr');
-      tr.id = `row-${i}`;
-      tr.innerHTML = `
-        <td class="sku-cell">${escHtml(sku)}</td>
-        <td class="date-cell"><span class="spinner"></span></td>
-      `;
+      tr.style.animationDelay = `${i * 50}ms`;
+
+      if (r.status === 'error') {
+        tr.innerHTML = `
+          <td class="td-image">—</td>
+          <td class="td-name"><span class="badge-error">NOT FOUND</span></td>
+          <td class="td-sku">${r.sku}</td>
+          <td>—</td><td>—</td><td>—</td>`;
+      } else {
+        const img = r.image ? `<img src="${r.image}" alt="${r.name}" />` : '—';
+        const retail = r.retail_price ? `$${r.retail_price}` : '—';
+        const lastSale = r.last_sale ? `$${r.last_sale}` : '—';
+        tr.innerHTML = `
+          <td class="td-image">${img}</td>
+          <td class="td-name">${r.name}<small>${r.brand} · ${r.colorway}</small></td>
+          <td class="td-sku">${r.sku}</td>
+          <td class="td-date">${r.release_date}</td>
+          <td class="td-price">${retail}</td>
+          <td class="td-price">${lastSale}</td>`;
+      }
       tbody.appendChild(tr);
-
-      let date = null, err = null;
-      try {
-        const res = await fetch(`${apiBase}/release-date?sku=${encodeURIComponent(sku)}`);
-        if (res.ok) {
-          const data = await res.json();
-          date = data.release_date || null;
-        } else {
-          const data = await res.json().catch(() => ({}));
-          err = data.detail || `HTTP ${res.status}`;
-        }
-      } catch (e) {
-        err = 'Network error';
-      }
-
-      results.push({ sku, date, err });
-
-      // Update row
-      const row = document.getElementById(`row-${i}`);
-      if (row) {
-        row.querySelector('td:last-child').outerHTML =
-          date
-            ? `<td class="date-cell">${escHtml(date)}</td>`
-            : `<td class="date-cell error">${escHtml(err || 'Not found')}</td>`;
-      }
-
-      document.getElementById('countBadge').textContent = `${i + 1} / ${skus.length}`;
-    }
-
-    progressFill.style.width = '100%';
-    progressText.textContent = `Done — ${skus.length} SKUs processed`;
-
-    btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">⚡</span> Fetch Release Dates';
-  }
-
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function exportCSV() {
-    if (!results.length) return;
-    const rows = [['SKU', 'Release Date']];
-    results.forEach(r => rows.push([r.sku, r.date || r.err || '']));
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'stockx-release-dates.csv';
-    a.click();
-  }
-
-  function copyTable() {
-    if (!results.length) return;
-    const lines = ['SKU\tRelease Date', ...results.map(r => `${r.sku}\t${r.date || r.err || ''}`)];
-    navigator.clipboard.writeText(lines.join('\n'))
-      .then(() => { showToast('Copied to clipboard!'); })
-      .catch(() => alert('Copy failed.'));
-  }
-
-  function showToast(msg) {
-    const t = document.createElement('div');
-    t.textContent = msg;
-    Object.assign(t.style, {
-      position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-      background: '#e8ff47', color: '#0a0a0a', fontFamily: "'DM Mono', monospace",
-      fontSize: '12px', padding: '10px 20px', borderRadius: '4px',
-      fontWeight: '500', zIndex: '999', letterSpacing: '0.06em',
-      animation: 'fadeUp 0.3s ease'
     });
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2000);
+
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('resultsTable').style.display = 'table';
+    document.getElementById('tableWrap').classList.add('visible');
   }
+
+  // Allow Enter key in textarea to not submit, keep multiline
+  document.getElementById('skuInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) lookupSKUs();
+  });
 </script>
+
 </body>
 </html>
