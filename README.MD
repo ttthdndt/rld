@@ -1,58 +1,84 @@
-# StockX Release Date API
+# SKU Scan — StockX Lookup Tool
 
-A FastAPI service that extracts the **release date** from a StockX product page.
+A web app to look up StockX product data by SKU. Built with FastAPI (backend) + HTML/CSS/JS (frontend).
 
----
-
-## Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/` | Health check |
-| GET | `/release-date?sku=SLUG` | Single SKU lookup |
-| GET | `/release-date/batch?skus=SLUG1,SLUG2` | Batch lookup (max 20) |
-
-### Example requests
+## Project Structure
 
 ```
-GET /release-date?sku=nike-air-max-1-anniversary-red
-GET /release-date/batch?skus=nike-air-max-1-anniversary-red,adidas-yeezy-boost-350-v2-zebra
-```
-
-### Example response
-
-```json
-{
-  "sku": "nike-air-max-1-anniversary-red",
-  "url": "https://stockx.com/nike-air-max-1-anniversary-red",
-  "release_date": "04/21/2017"
-}
+stockx-lookup/
+├── backend/
+│   ├── main.py           # FastAPI app
+│   └── requirements.txt
+├── frontend/
+│   └── index.html        # Single-file frontend
+├── vercel.json           # Backend deployment config
+└── README.md
 ```
 
 ---
 
-## Local development
+## 🚀 Deployment Guide
+
+### Step 1 — Push to GitHub
+
+1. Create a new repo on GitHub (e.g. `stockx-lookup`)
+2. Push this project:
 
 ```bash
-pip install -r requirements.txt
-uvicorn api.index:app --reload
-# → http://localhost:8000
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/YOUR_USERNAME/stockx-lookup.git
+git push -u origin main
 ```
 
 ---
 
-## Deploy to Vercel (via GitHub)
+### Step 2 — Deploy Backend on Vercel
 
-1. **Push this repo to GitHub**
+1. Go to [vercel.com](https://vercel.com) → **Add New Project**
+2. Import your GitHub repo
+3. Add Environment Variable:
+   - Key: `RAPIDAPI_KEY`
+   - Value: `c71d279a4emshe0f0dd7410b3dfdp1a9229jsn93f17eae361b`
+4. Deploy → copy the URL (e.g. `https://stockx-lookup.vercel.app`)
 
-2. **Go to [vercel.com](https://vercel.com)** → New Project → Import your GitHub repo
+---
 
-3. Vercel auto-detects Python. No build settings needed — `vercel.json` handles routing.
+### Step 3 — Update Frontend
 
-4. Click **Deploy** ✓
+Open `frontend/index.html` and find this line:
 
-### Notes
-- StockX heavily uses JavaScript rendering. If release dates are missing,
-  you may need to add a headless browser layer (e.g. Playwright via a separate
-  service) since Vercel serverless functions cannot run Chromium easily.
-- The scraper uses 3 fallback strategies: DOM parsing, JSON-LD, and meta tags.
+```js
+: 'https://YOUR-BACKEND.vercel.app'; // ← update after deploying
+```
+
+Replace it with your actual Vercel backend URL.
+
+---
+
+### Step 4 — Deploy Frontend on Vercel (or GitHub Pages)
+
+**Option A — GitHub Pages (easiest):**
+1. Move `frontend/index.html` to repo root as `index.html`
+2. Go to GitHub repo → Settings → Pages → Deploy from branch `main`
+
+**Option B — Vercel second project:**
+1. Create another Vercel project pointing to the `frontend/` folder
+
+---
+
+## 💡 Usage
+
+1. Open the frontend URL
+2. Paste SKUs one per line (e.g. `DV1031-030`)
+3. Click **LOOK UP** or press `Ctrl+Enter`
+4. View results table with Name, SKU, Release Date, Retail Price, Last Sale
+
+---
+
+## 🔑 Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `RAPIDAPI_KEY` | Your RapidAPI key for StockX API |
